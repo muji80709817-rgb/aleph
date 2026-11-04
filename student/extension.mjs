@@ -1199,6 +1199,192 @@ export function createStudentView() {
       root.append(message(`설명 확인 시각: ${typeof checkedAt === 'string' && checkedAt ? checkedAt : '시각 정보 없음'}`, 'note'));
       return root;
     },
-    renderAction() { return '학생 구현 대기: 현재 사건·조치·실제 대상·사람 확인·ACK와 원천 효과·unknown을 구분하세요.'; },
+    renderAction({ status, event, actionId, target, receipt, observation, message, confirmationExpiresAt, error } = {}) {
+      // 입력만으로 매번 새로 그린다. 새 값이 오면 이전 대상·요청·결과 표시는 남지 않는다.
+      // 학생 코드는 버튼·POST 요청·확인 티켓을 만들거나 저장하지 않는다. 조작은 제공 화면 버튼으로만 한다.
+      const root = document.createElement('div');
+      root.className = 'student-action';
+
+      const SAFE_CODE = /^[A-Z0-9_]{1,64}$/;
+      const text = (v) => (typeof v === 'string' && v.length > 0 ? v : null);
+      const message_ = (t, kind) => {
+        const p = document.createElement('p');
+        p.className = `student-state student-state-${kind}`;
+        p.textContent = t;
+        return p;
+      };
+      const kv = document.createElement('dl');
+      kv.className = 'student-action-kv';
+      const add = (label, value) => {
+        if (value == null || value === '') return;
+        const dt = document.createElement('dt');
+        dt.textContent = label;
+        const dd = document.createElement('dd');
+        dd.textContent = String(value);
+        kv.append(dt, dd);
+      };
+      const PROVIDED_BUTTONS = '조작은 제공 화면의 「조치 준비」, 「대상과 조치를 확인했으며 집행합니다」, 「연동 시스템 결과만 재조회」, 「조치 화면 취소」 버튼으로만 합니다.';
+      const REQUERY = '결과는 제공 화면의 「연동 시스템 결과만 재조회」를 직접 눌러 확인하세요. 자동으로 다시 집행하거나 재조회하지 않습니다.';
+      const CANCEL_NOTE = '「조치 화면 취소」는 이미 서버에 전달된 조치의 효과를 되돌리지 않습니다.';
+
+      const eventId = event && text(event.id);
+      const evidenceIds = event && Array.isArray(event.evidence)
+        ? event.evidence.map((e) => e && text(e.id)).filter(Boolean)
+        : [];
+      const r = receipt && typeof receipt === 'object' ? receipt : null;
+
+      // 현재 사건·조치와 접수 기록이 같은 대상인지 확인한다. 다르면 이 결과를 현재 결과로 쓰지 않는다.
+      const mismatch = r && (
+        (text(r.eventId) && eventId && r.eventId !== eventId)
+        || (text(r.actionId) && text(actionId) && r.actionId !== actionId)
+      );
+
+      // 현재 범위의 식별 정보(있는 것만). 확인 번호(confirmationId)는 입력에 없으며 만들거나 표시하지 않는다.
+      const fillIdentity = (showReceiptStatus) => {
+        add('사건 ID(event.id)', eventId);
+        add('근거 ID', evidenceIds.length > 0 ? evidenceIds.join(', ') : null);
+        add('조치(actionId)', text(actionId));
+        if (target && typeof target === 'object') {
+          add('실제 대상(target.id)', text(target.id));
+          add('대상 세대(target.generation)', Number.isSafeInteger(target.generation) ? target.generation : null);
+        }
+        if (r) {
+          add('요청 ID(requestId)', text(r.requestId));
+          add('접수 ID(receiptId)', text(r.receiptId));
+          add('버전(version)', Number.isSafeInteger(r.version) ? r.version : null);
+          // 결과 불명 화면에서는 서버의 원래 상태값을 보여 주지 않는다(성공으로 읽히지 않게).
+          if (showReceiptStatus) add('서버 기록 상태(receipt.status)', text(r.status));
+        }
+      };
+
+      const finish = ({ showReceiptStatus = true, skipMessage = false } = {}) => {
+        fillIdentity(showReceiptStatus);
+        if (kv.children.length > 0) root.append(kv);
+        if (r && r.replayed === true) {
+          root.append(message_('같은 요청이 이미 기록돼 있어 서버가 기존 결과를 돌려줬습니다(replayed). 조치를 한 번 더 집행하지 않았습니다.', 'note'));
+        }
+        const extra = text(message);
+        if (extra && !skipMessage) root.append(message_(`제공 화면 안내: ${extra}`, 'note'));
+        root.append(message_(PROVIDED_BUTTONS, 'note'));
+        return root;
+      };
+
+      const unknownResult = (reason) => {
+        root.setAttribute('data-student-action-state', 'unknown');
+        root.append(
+          message_('결과 불명(unknown)', 'error'),
+          message_(reason, 'error'),
+          message_('성공으로도, 효과 없음으로도 판단하지 마세요. 이미 전달된 조치의 효과가 있을 수 있습니다.', 'error'),
+          message_(REQUERY, 'note'),
+          message_(CANCEL_NOTE, 'note'),
+        );
+        return finish({ showReceiptStatus: false });
+      };
+
+      const st = typeof status === 'string' ? status : 'unknown';
+
+      // 초기 상태: 실행 경로가 열리지 않은 것이 정상임을 알려 준다.
+      if (st === 'idle') {
+        root.setAttribute('data-student-action-state', 'idle');
+        root.append(
+          message_('아직 미실행(idle): 준비·전달된 조치가 없습니다.', 'idle'),
+          message_('AI 조치 제안은 제안일 뿐이며 실행되지 않았습니다. 사람이 대상과 조치를 확인해야 서버에 전달됩니다.', 'note'),
+          message_('지금 기록에는 연동 시스템이 지원하는 조치가 없어(supportedActions 빈 배열) 「조치 준비」 버튼이 나오지 않는 것이 정상입니다.', 'note'),
+        );
+        const extra = text(message);
+        if (extra) root.append(message_(`제공 화면 안내: ${extra}`, 'note'));
+        return root;
+      }
+
+      // 현재 사건·요청이 있는 화면에만 바인딩 속성을 붙인다.
+      if (eventId && !mismatch) root.setAttribute('data-student-action-event', eventId);
+      if (r && text(r.requestId) && !mismatch) root.setAttribute('data-student-action-request', r.requestId);
+
+      if (mismatch) {
+        return unknownResult('접수 기록의 사건 또는 조치가 현재 선택과 맞지 않아, 이 결과를 현재 조치의 결과로 쓸 수 없습니다.');
+      }
+
+      switch (st) {
+        case 'loading':
+          root.setAttribute('data-student-action-state', 'loading');
+          root.append(
+            message_(r ? '연동 시스템 결과 조회 중(loading) · 아직 결과가 아닙니다.' : '조치 준비 중(loading) · 미실행', 'loading'),
+          );
+          return finish();
+        case 'prepared': {
+          root.setAttribute('data-student-action-state', 'prepared');
+          const expires = text(confirmationExpiresAt);
+          root.append(
+            message_('준비됨·미실행(prepared): 아직 서버에 집행을 요청하지 않았습니다.', 'loading'),
+            message_('사람 확인이 필요합니다. 아래 사건·근거·조치·실제 대상을 직접 확인한 뒤에만 제공 화면의 「대상과 조치를 확인했으며 집행합니다」를 누르세요.', 'note'),
+            message_(`확인 기한(confirmationExpiresAt): ${expires || '확인 불가'} · 기한이 지나면 다시 준비해야 합니다.`, 'note'),
+          );
+          return finish();
+        }
+        case 'executing':
+          root.setAttribute('data-student-action-state', 'executing');
+          root.append(
+            message_('서버에 전달 중(executing): 사람 확인 후 요청을 보내는 중입니다.', 'loading'),
+            message_('결과가 아직 없습니다. 완료 아님 · 효과 미확인', 'loading'),
+          );
+          return finish();
+        case 'pending':
+          root.setAttribute('data-student-action-state', 'pending');
+          root.append(
+            message_('서버 접수·처리 중(pending): 서버가 요청을 받았습니다(ACK).', 'loading'),
+            message_('접수(ACK)는 효과가 아닙니다. 연동 시스템의 효과는 아직 확인되지 않았습니다. 완료 아님', 'loading'),
+            message_(REQUERY, 'note'),
+          );
+          return finish();
+        case 'succeeded': {
+          const obs = observation && typeof observation === 'object' ? observation : null;
+          const observedAt = obs && text(obs.observedAt);
+          if (!obs || obs.effectApplied !== true || !observedAt || !r || !text(r.receiptId)) {
+            return unknownResult('succeeded 로 왔지만 연동 시스템의 효과 관측(observation.effectApplied: true, 관측 시각, receiptId)을 모두 확인할 수 없습니다.');
+          }
+          root.setAttribute('data-student-action-state', 'succeeded');
+          root.append(
+            message_('효과 확인(succeeded): 연동 시스템이 조치 효과를 관측했습니다.', 'ok'),
+            message_(`관측 시각(observation.observedAt): ${observedAt}`, 'ok'),
+            message_('effectApplied: true', 'ok'),
+            message_(`접수 ID(receiptId): ${r.receiptId}`, 'ok'),
+          );
+          return finish();
+        }
+        case 'denied':
+        case 'failed': {
+          root.setAttribute('data-student-action-state', st);
+          const reason = (error && text(error.message)) || text(message) || '사유 정보 없음';
+          root.append(
+            message_(st === 'denied' ? '거절(denied): 연동 시스템이 이 조치를 거절했습니다.' : '실패(failed): 연동 시스템이 조치를 처리하지 못했습니다.', 'error'),
+            message_(`사유: ${reason}`, 'error'),
+            message_('조치 효과는 적용되지 않은 것으로 보고됐습니다. 자동으로 다시 집행하지 않습니다.', 'note'),
+          );
+          return finish({ skipMessage: reason === text(message) });
+        }
+        case 'expired':
+          root.setAttribute('data-student-action-state', 'expired');
+          root.append(
+            message_('확인 기한 지남(expired): 이 준비는 더 이상 집행할 수 없습니다.', 'error'),
+            message_('제공 화면에서 「조치 준비」로 다시 준비하고 대상을 다시 확인하세요. 서버에 집행을 요청하지 않았습니다.', 'note'),
+          );
+          return finish();
+        case 'error': {
+          root.setAttribute('data-student-action-state', 'error');
+          const code = error && typeof error.code === 'string' && SAFE_CODE.test(error.code) ? error.code : 'UNKNOWN';
+          const msg = (error && text(error.message)) || '요청을 처리하지 못했습니다.';
+          root.append(
+            message_(`요청 처리 안 됨(error): ${msg} (오류 코드: ${code})`, 'error'),
+            message_('조치가 실행됐다고 판단하지 마세요. 필요하면 제공 화면에서 다시 준비하세요.', 'note'),
+          );
+          return finish();
+        }
+        case 'unknown':
+        default:
+          return unknownResult(st === 'unknown'
+            ? `연동 시스템 결과를 확인할 수 없습니다.${error && text(error.message) ? ` ${error.message}` : ''}`
+            : `알 수 없는 상태 값(${st})이라 결과를 확인할 수 없습니다.`);
+      }
+    },
   };
 }
