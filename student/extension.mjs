@@ -1146,7 +1146,7 @@ export function createStudentView() {
       if (status === 'loading') {
         root.append(
           message('AI 연결 점검 중', 'loading'),
-          message('점검을 멈추려면 「취소」를 누르세요. 아직 결과가 아닙니다.', 'loading'),
+          message('점검을 멈추려면 「AI 연결 점검 취소」를 누르세요. 아직 결과가 아닙니다.', 'loading'),
         );
         return root;
       }
@@ -1370,8 +1370,8 @@ export function createStudentView() {
         dd.textContent = String(value);
         kv.append(dt, dd);
       };
-      const PROVIDED_BUTTONS = '조작은 제공 화면의 「조치 준비」, 「대상과 조치를 확인했으며 집행합니다」, 「연동 시스템 결과만 재조회」, 「조치 화면 취소」 버튼으로만 합니다.';
-      const REQUERY = '결과는 제공 화면의 「연동 시스템 결과만 재조회」를 직접 눌러 확인하세요. 자동으로 다시 집행하거나 재조회하지 않습니다.';
+      const PROVIDED_BUTTONS = '조작은 제공 화면의 「<조치> 조치 준비」, 「대상과 조치를 확인했으며 집행합니다」, 「원천 결과만 재조회」, 「조치 화면 취소」 버튼으로만 합니다.';
+      const REQUERY = '결과는 제공 화면의 「원천 결과만 재조회」를 직접 눌러 확인하세요. 자동으로 다시 집행하거나 재조회하지 않습니다.';
       const CANCEL_NOTE = '「조치 화면 취소」는 이미 서버에 전달된 조치의 효과를 되돌리지 않습니다.';
 
       const eventId = event && text(event.id);
@@ -1436,7 +1436,7 @@ export function createStudentView() {
         root.append(
           message_('아직 미실행(idle): 준비·전달된 조치가 없습니다.', 'idle'),
           message_('AI 조치 제안은 제안일 뿐이며 실행되지 않았습니다. 사람이 대상과 조치를 확인해야 서버에 전달됩니다.', 'note'),
-          message_('지금 기록에는 연동 시스템이 지원하는 조치가 없어(supportedActions 빈 배열) 「조치 준비」 버튼이 나오지 않는 것이 정상입니다.', 'note'),
+          message_('지금 기록에는 연동 시스템이 지원하는 조치가 없어(supportedActions 빈 배열) 「<조치> 조치 준비」 버튼이 나오지 않는 것이 정상입니다.', 'note'),
         );
         const extra = text(message);
         if (extra) root.append(message_(`제공 화면 안내: ${extra}`, 'note'));
@@ -1513,7 +1513,7 @@ export function createStudentView() {
           root.setAttribute('data-student-action-state', 'expired');
           root.append(
             message_('확인 기한 지남(expired): 이 준비는 더 이상 집행할 수 없습니다.', 'error'),
-            message_('제공 화면에서 「조치 준비」로 다시 준비하고 대상을 다시 확인하세요. 서버에 집행을 요청하지 않았습니다.', 'note'),
+            message_('제공 화면에서 「<조치> 조치 준비」로 다시 준비하고 대상을 다시 확인하세요. 서버에 집행을 요청하지 않았습니다.', 'note'),
           );
           return finish();
         case 'error': {

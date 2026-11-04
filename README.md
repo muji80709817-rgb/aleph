@@ -24,4 +24,17 @@ npm start도 같은 서버를 켭니다. 기본 실행은 실제 회사 시스�
 - 단계별 확인 항목: docs/CURRICULUM.json, docs/IMPLEMENTATION_CONTRACT.md
 - 오류 코드별 해결: docs/CONNECTION_TROUBLESHOOT.md
 - 시작 틀 업데이트(내 파일 보존): docs/STARTER_UPDATE.md
+- 학생 실행 설명서·구성도·구현 함수 표: docs/STUDENT_RUNBOOK.md (아래 "학생 문서" 절 참고)
 - 실제 회사 시스템(SDP)·앱 안 AI 연결은 담당자가 따로 안내할 때만 씁니다: docs/SDP_HOST_CONNECTION.md, docs/AI_SETUP_GUIDE.md. 이 연결은 앱을 처음 켜고 13~16단계 화면을 만들거나 공식 AI 코드 판정을 받기 위한 전제 조건은 아닙니다. 다만 17단계 이후의 실제 연결과 새 환경 재현은 해당 단계의 기준에 따라 따로 확인합니다.
+
+## 학생 문서 (21단계 추가)
+
+이 절과 docs/STUDENT_RUNBOOK.md는 학생이 추가했습니다. 위의 제공 내용에는 "더 읽을 곳"에 STUDENT_RUNBOOK.md 링크 한 줄만 더했고, 나머지는 바꾸지 않았습니다.
+
+- **목적**: 직원이 자기 로그인·기기·세션, 업무 앱 접속 판정, 접속·XDR 기록, 설치 패키지 취약점, AI 사건 설명, 조치 요청 상태를 보는 보안 앱 케셰브입니다.
+- **학생이 구현한 기능**: student/extension.mjs의 renderIdentity(13), renderDecision(14), renderEvents(15·16), renderStatus(16), renderAiConnection(17), renderExplanation(17·18), renderAction(19), renderVulnerabilities(20).
+- **제공 부분**: src/(로컬 서버), public/(화면), tools/(실행 도구)는 제공 코드이며 수정하지 않았습니다.
+- **구성**: 브라우저 → 로컬 앱 서버(src/server.mjs, 127.0.0.1:5189) → 접근 제어·XDR 시스템(기존 엔진/SDP) / AI 게이트웨이 / OSV. 구성도(Mermaid·ASCII·표)는 docs/STUDENT_RUNBOOK.md 5장에 있습니다.
+- **지원 환경과 확인 버전**: Windows, Node.js 22~24(기준 24.19.0, 이 PC에서 실제 실행은 v24.21.0). npm 의존성은 없습니다.
+- **실행**: 이 폴더(저장소 최상위)의 PowerShell에서 `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\start-alekov.ps1`을 실행하고 http://127.0.0.1:5189/ 를 엽니다. 종료는 Ctrl+C입니다.
+- **확인하지 않은 것**: 브라우저 화면, AI·SDP 실제 연결, 조치 집행, OSV 실제 조회는 미확인입니다. 자세한 내용은 STUDENT_RUNBOOK.md 7장에 있습니다.
