@@ -37,4 +37,6 @@ npm start도 같은 서버를 켭니다. 기본 실행은 실제 회사 시스�
 - **구성**: 브라우저 → 로컬 앱 서버(src/server.mjs, 127.0.0.1:5189) → 접근 제어·XDR 시스템(기존 엔진/SDP) / AI 게이트웨이 / OSV. 구성도(Mermaid·ASCII·표)는 docs/STUDENT_RUNBOOK.md 5장에 있습니다.
 - **지원 환경과 확인 버전**: Windows, Node.js 22~24(기준 24.19.0, 이 PC에서 실제 실행은 v24.21.0). npm 의존성은 없습니다.
 - **실행**: 이 폴더(저장소 최상위)의 PowerShell에서 `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\start-alekov.ps1`을 실행하고 http://127.0.0.1:5189/ 를 엽니다. 종료는 Ctrl+C입니다.
-- **확인하지 않은 것**: 브라우저 화면, AI·SDP 실제 연결, 조치 집행, OSV 실제 조회는 미확인입니다. 자세한 내용은 STUDENT_RUNBOOK.md 7장에 있습니다.
+- **버전**: 0.2.11 학생 구현본 · 검증 중인 버전(v1.0 아님). 재현 기록·데이터 보존 계획·미해결 사항은 docs/RELEASE_RECORD.md(22단계)에 있습니다.
+- **확인한 것과 확인하지 않은 것**: 새 폴더에서 clone한 커밋 8ba05cb로 실행·종료·재실행, 브라우저 화면, 예제(demo) 표시를 확인했습니다. AI·SDP 실제 연결, 조치 집행, OSV 실제 조회는 미확인입니다.
+- **출처**: 13~15단계 코드와 시작 틀은 github.com/dyj02056/jsw_keshev의 step15 브랜치에서 복사했습니다(RELEASE_RECORD.md 1.1).

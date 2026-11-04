@@ -23,7 +23,7 @@
 | Node.js | 22~24, 수업 기준 24.19.0 (`package.json`의 `engines.node`) | v24.21.0 | 실행 확인(`node --version`). 실행 도구가 "참고: 지금 Node.js 는 v24.21.0 입니다. 수업 기준은 v24.19.0 입니다."를 출력하고 계속 실행됨 |
 | Git | 커밋·제출용 | 2.55.0.windows.5 | 실행 확인(`git --version`) |
 | npm 의존성 | 없음 (`package.json`에 dependencies 없음, `package-lock.json` 없음) | 설치할 것 없음 | 코드 확인 |
-| 브라우저 | PC 브라우저 | — | 미확인(이 문서 작성 중 브라우저 화면은 열지 않음) |
+| 브라우저 | PC 브라우저 | Claude 데스크톱 앱 내장 브라우저 | 실제 화면(22단계 재현, `docs/RELEASE_RECORD.md` 3장) |
 | 시작 틀 버전 | `package.json` name `alekov-client-starter`, version `0.2.11` | 0.2.11 | 코드 확인 |
 
 지원하지 않거나 확인하지 않은 환경:
@@ -35,7 +35,7 @@
 이 저장소는 **최상위 폴더가 곧 앱 폴더**입니다. 제공 안내서(`STUDENT_LAUNCH_GUIDE.md`)에 나오는 `on-client` 하위 폴더는 이 저장소에 없습니다. 실행 도구는 `tools`의 상위 폴더에 `src\server.mjs`와 `package.json`(name `alekov-client-starter`)이 있는지만 검사합니다. (코드 확인: `tools/start-alekov.ps1` 1번 단계)
 
 ```text
-C:\Users\User\Documents\aleph\aleph\   ← Git 최상위 = 앱 폴더 (PowerShell을 여기서 엽니다)
+<저장소를 받은 폴더>\   ← Git 최상위 = 앱 폴더 (PowerShell을 여기서 엽니다)
 ├─ package.json            제공 · 실행 스크립트(start / demo / check)
 ├─ .env.example            제공 · 비밀 없는 설정 견본(서버가 자동으로 읽지 않음)
 ├─ README.md               제공 · 맨 아래 "학생 문서" 절과 링크 한 줄만 학생이 추가
@@ -63,7 +63,7 @@ C:\Users\User\Documents\aleph\aleph\   ← Git 최상위 = 앱 폴더 (PowerShel
 ## 4. 실행·종료·재실행
 
 ### 4.1 PowerShell을 여는 위치
-1. 파일 탐색기에서 `C:\Users\User\Documents\aleph\aleph`를 엽니다. 다른 PC라면 이 저장소를 받은 폴더입니다.
+1. 파일 탐색기에서 이 저장소를 받은(clone한) 폴더를 엽니다. 예: `git clone https://github.com/muji80709817-rgb/aleph.git`로 받았다면 만들어진 `aleph` 폴더입니다. 특정 PC의 절대경로에 의존하지 않습니다.
 2. 주소 표시줄에 `powershell`을 입력하고 Enter를 누릅니다.
 3. 창 제목이나 프롬프트가 이 폴더 경로인지 확인합니다.
 
@@ -84,7 +84,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\start-alekov.ps1
 
 **브라우저 주소**: `http://127.0.0.1:5189/`
 - 서버가 `127.0.0.1`에서만 열리므로, 같은 PC의 브라우저에서만 접속됩니다. (코드 확인: `server.listen(port,'127.0.0.1')`)
-- 화면이 「보호 현황」으로 열리고 학생 칸이 보이는지는 이 문서 작성 중 **미확인**입니다.
+- 22단계 재현에서 이 주소를 열어 제목 "케셰브 · ZTNA & XDR"과 학생 칸 8개가 표시되는 것을 확인했습니다(실제 화면, `docs/RELEASE_RECORD.md` 3장).
 
 ### 4.3 다른 켜는 방법
 
@@ -196,6 +196,8 @@ flowchart LR
 
 ## 7. 확인한 기능과 확인하지 않은 기능
 
+새 폴더 재현 절차, 단계별 결과, 데이터 보존 계획, 버전과 미해결 사항은 `docs/RELEASE_RECORD.md`(22단계)에 있습니다.
+
 | 기능 | 결과 | 확인 방법 |
 |---|---|---|
 | 실행 도구로 서버 켜기, 시작 신호 출력 | 됨 | 실행 확인 |
@@ -203,13 +205,15 @@ flowchart LR
 | `-Background` 실행 후 `Stop-Process`로 종료 | 됨 | 실행 확인 |
 | `student/extension.mjs` 문법 | 통과 | 실행 확인(`node --check`) |
 | 16~20단계 학생 함수의 상태별 문장·속성 | 의도대로 나옴 | 모의 확인(가짜 DOM과 가짜 입력으로 함수 실행) |
-| 브라우저에서 학생 칸이 실제로 보이는지 | — | **미확인** |
-| 「다시 불러오기」 후 이전 실패 안내가 사라지는지(실제 화면) | — | **미확인**(코드상으로는 입력만으로 새로 그림) |
+| 브라우저에서 학생 칸 8개가 보이는지 | 보임(미연결 상태 표시) | 실제 화면(22단계 재현) |
+| 자동 재요청이 없는지, 「다시 불러오기」를 누를 때만 요청하는지 | 10초 동안 추가 요청 0건, 클릭 시 5개 경로 각 1회 | 실제 화면(22단계 재현) |
+| 「다시 불러오기」 후 이전 실패 안내가 사라지는지(실제 화면) | — | **미확인**. 엔진 미연결이라 다시 불러와도 성공 응답이 오지 않음(코드상으로는 입력만으로 새로 그림) |
 | 「도움정보 복사」 클립보드 복사(실제 브라우저) | — | **미확인**(모의 확인에서는 6개 필드만 복사됨) |
 | 계정 연결·AI 연결·AI 사건 설명 | — | **미확인**. 운영자 권한 준비가 필요하며 유료 요청은 하지 않음 |
 | 기존 엔진(SDP) 연결, 실제 접근 판정·보안 기록 | — | **미확인**. 기본 실행은 `ENGINE_NOT_CONNECTED` |
 | 조치 준비·집행·결과 재조회 | — | **미확인**. 지원 조치가 없어 경로가 열리지 않으며, 시험 집행도 하지 않음 |
 | OSV 실제 조회 | — | **미확인**. `ON_PROJECT_DIRECTORY`가 비어 있고 이 저장소에는 `package-lock.json`이 없어 `not_configured`가 예상됨(코드 확인) |
+| 예제 모드 표시 | `start-alekov.ps1 -Demo -Port 5191`로 예제 기기·세션·기록 표시 | 예제(demo), 22단계 재현. 실제 연결이 아님 |
 | `npm start`, `npm run demo` | — | **미확인**(코드 확인만 함) |
 
 ## 8. 문제가 생겼을 때 (오류별 확인 순서)
